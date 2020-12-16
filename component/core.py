@@ -346,14 +346,18 @@ class WorkContext(object):
             work_context = self.work_on(model_name)
         return component_class(work_context)
 
-    def _lookup_components(self, usage=None, model_name=None):
+    def _lookup_components(self, usage=None, model_name=None, **kw):
         component_classes = self.components_registry.lookup(
             self.collection._name, usage=usage, model_name=model_name
         )
 
-        return [cls for cls in component_classes if cls._component_match(self)]
+        return [
+            cls
+            for cls in component_classes
+            if cls._component_match(self, usage=usage, model_name=model_name, **kw)
+        ]
 
-    def component(self, usage=None, model_name=None):
+    def component(self, usage=None, model_name=None, **kw):
         """ Find a component by usage and model for the current collection
 
         It searches a component using the rules of
@@ -379,7 +383,9 @@ class WorkContext(object):
         if isinstance(model_name, models.BaseModel):
             model_name = model_name._name
         model_name = model_name or self.model_name
-        component_classes = self._lookup_components(usage=usage, model_name=model_name)
+        component_classes = self._lookup_components(
+            usage=usage, model_name=model_name, **kw
+        )
         if not component_classes:
             raise NoComponentError(
                 "No component found for collection '%s', "
@@ -416,7 +422,7 @@ class WorkContext(object):
             work_context = self.work_on(model_name)
         return component_classes[0](work_context)
 
-    def many_components(self, usage=None, model_name=None):
+    def many_components(self, usage=None, model_name=None, **kw):
         """ Find many components by usage and model for the current collection
 
         It searches a component using the rules of
@@ -430,7 +436,9 @@ class WorkContext(object):
         if isinstance(model_name, models.BaseModel):
             model_name = model_name._name
         model_name = model_name or self.model_name
-        component_classes = self._lookup_components(usage=usage, model_name=model_name)
+        component_classes = self._lookup_components(
+            usage=usage, model_name=model_name, **kw
+        )
         if model_name == self.model_name:
             work_context = self
         else:
@@ -664,7 +672,7 @@ class AbstractComponent(object, metaclass=MetaComponent):
         self.work = work_context
 
     @classmethod
-    def _component_match(cls, work):
+    def _component_match(cls, work, usage=None, model_name=None, **kw):
         """ Evaluated on candidate components
 
         When a component lookup is done and candidate(s) have
