@@ -357,7 +357,7 @@ class WorkContext(object):
             if cls._component_match(self, usage=usage, model_name=model_name, **kw)
         ]
 
-    def component(self, usage=None, model_name=None, **kw):
+    def component(self, usage=None, model_name=None, first=False, **kw):
         """ Find a component by usage and model for the current collection
 
         It searches a component using the rules of
@@ -406,16 +406,19 @@ class WorkContext(object):
                 if c.apply_on_models and model_name in c.apply_on_models
             ]
         if len(component_classes) != 1:
-            raise SeveralComponentError(
-                "Several components found for collection '%s', "
-                "usage '%s', model_name '%s'. Found: %r"
-                % (
-                    self.collection._name,
-                    usage or "",
-                    model_name or "",
-                    component_classes,
+            if first:
+                component_classes = component_classes[:1]
+            else:
+                raise SeveralComponentError(
+                    "Several components found for collection '%s', "
+                    "usage '%s', model_name '%s'. Found: %r"
+                    % (
+                        self.collection._name,
+                        usage or "",
+                        model_name or "",
+                        component_classes,
+                    )
                 )
-            )
         if model_name == self.model_name:
             work_context = self
         else:
